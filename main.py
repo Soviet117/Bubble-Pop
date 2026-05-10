@@ -1,43 +1,43 @@
 import turtle
 import os
 import pygame
-from game import iniciar_juego
+from decoraciones import inicializar_decoraciones, juego_terminado as deco_juego_terminado
+from burbujas_juego import inicializar_juego, juego_terminado as juego_juego_terminado
 
-# Configuración de la ventana
+# Configurar ventana
 ventana = turtle.Screen()
 ventana.title("🐟 Bubble Pop - Ordenamiento Burbuja Submarino")
-ventana.bgcolor("#0B3B5C")  # Azul marino profundo
+ventana.bgcolor("#0B3B5C")
 ventana.setup(900, 650)
-ventana.tracer(0)  # Para animaciones suaves, actualizamos manualmente
+ventana.tracer(0)
 
-# Inicializar pygame mixer para sonido
+# Inicializar pygame mixer
 pygame.mixer.init()
 
-# Rutas de sonido
 RUTA_SONIDOS = os.path.join("assets", "sounds")
-FONDO = os.path.join(RUTA_SONIDOS, "background.wav")
-POP_CORRECTO = os.path.join(RUTA_SONIDOS, "pop_correct.wav")
-ERROR = os.path.join(RUTA_SONIDOS, "wrong.wav")
-VICTORIA = os.path.join(RUTA_SONIDOS, "victory.wav")
-
-def cargar_sonido(ruta):
+def cargar_sonido(nombre):
+    ruta = os.path.join(RUTA_SONIDOS, nombre)
     if os.path.exists(ruta):
         return pygame.mixer.Sound(ruta)
     else:
-        print(f"⚠️  No se encontró {ruta}, se omitirá el sonido.")
+        print(f"⚠️ No se encontró {ruta}")
         return None
 
-sonido_pop = cargar_sonido(POP_CORRECTO)
-sonido_error = cargar_sonido(ERROR)
-sonido_victoria = cargar_sonido(VICTORIA)
+sonido_pop = cargar_sonido("pop_correct.wav")
+sonido_error = cargar_sonido("wrong.wav")
+sonido_victoria = cargar_sonido("victory.wav")
 
-# Música de fondo en bucle
-if os.path.exists(FONDO):
-    pygame.mixer.music.load(FONDO)
-    pygame.mixer.music.play(-1)  # Repetir indefinidamente
+# Música de fondo
+fondo = os.path.join(RUTA_SONIDOS, "background.wav")
+if os.path.exists(fondo):
+    pygame.mixer.music.load(fondo)
+    pygame.mixer.music.play(-1)
 
-# Iniciar la lógica del juego
-iniciar_juego(ventana, sonido_pop, sonido_error, sonido_victoria)
+# Inicializar decoraciones (fondo, algas, peces, burbujitas)
+inicializar_decoraciones()
+
+# Inicializar juego (burbujas con números, interacción)
+inicializar_juego(sonido_pop, sonido_error, sonido_victoria)
 
 # Mantener la ventana abierta
 ventana.mainloop()
