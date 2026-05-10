@@ -167,19 +167,19 @@ def intercambiar_burbujas(i, j):
     mover_burbuja(b1, x2, y2)
     mover_burbuja(b2, x1, y1)
 
-    # Actualizar datos
+    # Actualizar posiciones en los objetos
     b1['pos'] = (x2, y2)
     b2['pos'] = (x1, y1)
-    # Intercambiar valores
-    v1, v2 = b1['valor'], b2['valor']
-    b1['valor'] = v2
-    b2['valor'] = v1
-    numeros[i], numeros[j] = numeros[j], numeros[i]
-    burbujas[i], burbujas[j] = b2, b1   # Intercambiar referencias en la lista para que índices coincidan
 
-    # Redibujar ambas burbujas con color normal (el resaltado se actualizará en la siguiente acción)
-    redibujar_burbuja(burbujas[i], COLOR_BURBUJA_NORMAL)  # ahora burbujas[i] es b2 en la nueva posición
-    redibujar_burbuja(burbujas[j], COLOR_BURBUJA_NORMAL)  # burbujas[j] es b1
+    # Intercambiar los números en la lista global (los valores dentro de las burbujas no cambian)
+    numeros[i], numeros[j] = numeros[j], numeros[i]
+
+    # Intercambiar las referencias en la lista para que los índices coincidan con la posición visual
+    burbujas[i], burbujas[j] = b2, b1
+
+    # Redibujar todas las burbujas con color normal (se pierde cualquier resaltado)
+    for b in burbujas:
+        redibujar_burbuja(b, COLOR_BURBUJA_NORMAL)
 
     intercambios += 1
     actualizar_marcador()
@@ -198,7 +198,6 @@ def finalizar_juego():
     info_turtle.write("🎉 ¡Felicidades! Haz clic para salir.", align="center", font=("Arial", 16, "bold"))
     if sonido_victoria:
         sonido_victoria.play()
-    # Desactivar clics
     turtle.onscreenclick(lambda x, y: turtle.bye())
 
 def manejar_click(x, y):
@@ -227,6 +226,7 @@ def manejar_click(x, y):
                     if numeros[seleccionada] > numeros[i]:
                         intercambiar_burbujas(seleccionada, i)
                         seleccionada = None
+                        # resaltar_vecinos ya se aplicó dentro de intercambiar_burbujas a todos
                         if verificar_ordenado():
                             finalizar_juego()
                         else:
@@ -236,7 +236,6 @@ def manejar_click(x, y):
                     else:
                         if sonido_error:
                             sonido_error.play()
-                        # Temblor en la burbuja seleccionada
                         t = burbujas[seleccionada]['principal']
                         for _ in range(3):
                             t.setx(t.xcor()+5); time.sleep(0.03)
@@ -258,7 +257,6 @@ def manejar_click(x, y):
             turtle.update()
             break
     else:
-        # Clic fuera de cualquier burbuja
         if seleccionada is not None:
             resaltar_vecinos(None)
             seleccionada = None
