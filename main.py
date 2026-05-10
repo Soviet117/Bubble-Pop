@@ -7,7 +7,7 @@ from burbujas_juego import inicializar_juego, juego_terminado as juego_juego_ter
 # Configurar ventana
 ventana = turtle.Screen()
 ventana.title("🐟 Bubble Pop - Ordenamiento Burbuja Submarino")
-ventana.bgcolor("#0B3B5C")
+ventana.bgcolor("#041E38")
 ventana.setup(900, 650)
 ventana.tracer(0)
 
@@ -15,16 +15,17 @@ ventana.tracer(0)
 pygame.mixer.init()
 
 RUTA_SONIDOS = os.path.join("assets", "sounds")
+
 def cargar_sonido(nombre):
     ruta = os.path.join(RUTA_SONIDOS, nombre)
     if os.path.exists(ruta):
         return pygame.mixer.Sound(ruta)
     else:
-        print(f"⚠️ No se encontró {ruta}")
+        print(f"⚠ No se encontró {ruta}")
         return None
 
-sonido_pop = cargar_sonido("pop_correct.wav")
-sonido_error = cargar_sonido("wrong.wav")
+sonido_pop      = cargar_sonido("pop_correct.wav")
+sonido_error    = cargar_sonido("wrong.wav")
 sonido_victoria = cargar_sonido("victory.wav")
 
 # Música de fondo
