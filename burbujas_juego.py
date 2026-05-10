@@ -223,10 +223,12 @@ def manejar_click(x, y):
                     info_turtle.write("🖱️ Selecciona una burbuja y luego una vecina para intercambiarlas.",
                                       align="center", font=("Arial", 14, "bold"))
                 elif abs(seleccionada - i) == 1:
-                    if numeros[seleccionada] > numeros[i]:
-                        intercambiar_burbujas(seleccionada, i)
+                    # Determinar cuál es izquierda y cuál derecha
+                    izquierda = min(seleccionada, i)
+                    derecha = max(seleccionada, i)
+                    if numeros[izquierda] > numeros[derecha]:
+                        intercambiar_burbujas(izquierda, derecha)
                         seleccionada = None
-                        # resaltar_vecinos ya se aplicó dentro de intercambiar_burbujas a todos
                         if verificar_ordenado():
                             finalizar_juego()
                         else:

@@ -1,0 +1,71 @@
+Bubble Pop - Ordenamiento Burbuja Submarino
+============================================
+
+Este proyecto es un minivideojuego interactivo desarrollado en Python
+que demuestra el funcionamiento del algoritmo de ordenamiento Burbuja
+de manera visual. Forma parte del curso de Algoritmos y Estructuras
+de Datos.
+
+DESCRIPCION
+-----------
+
+El jugador debe ordenar burbujas numeradas en el fondo del mar. Solo
+se pueden intercambiar burbujas adyacentes, y el intercambio solo es
+valido si el numero de la izquierda es mayor que el de la derecha.
+El objetivo es ordenar toda la lista de menor a mayor con la menor
+cantidad de intercambios posibles.
+
+REQUISITOS
+----------
+
+Python 3.10 o superior
+pip (gestor de paquetes de Python)
+
+ESTRUCTURA DEL PROYECTO
+-----------------------
+
+bubble-pop/
+  main.py              Punto de entrada, configura ventana y sonido
+  decoraciones.py      Fondo, algas, peces y animacion del mar
+  burbujas_juego.py    Logica del juego, burbujas, clics e intercambios
+  assets/
+    sounds/            Archivos de sonido (wav)
+  requirements.txt
+  README.txt
+  .gitignore
+
+INSTALACION Y EJECUCION
+-----------------------
+
+Windows
+-------
+
+Abrir una terminal (cmd o PowerShell) en la carpeta del proyecto.
+
+  python -m venv venv
+  venv\Scripts\activate
+  pip install -r requirements.txt
+  python main.py
+
+Linux
+-----
+
+Abrir una terminal en la carpeta del proyecto.
+
+  python -m venv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+  python main.py
+
+NOTA SOBRE LOS SONIDOS
+----------------------
+
+Los archivos de sonido deben estar en la carpeta assets/sounds.
+Si no se encuentran, el juego funciona igual pero sin efectos
+de audio.
+
+CREDITOS
+--------
+
+Desarrollado como proyecto del curso Algoritmos y Estructuras
+de Datos - Universidad Catolica Sedes Sapientiae.
