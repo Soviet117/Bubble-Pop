@@ -289,15 +289,18 @@ def dibujar_burbujas_decorativas():
 def animar_mar():
     if juego_terminado:
         return
-    for pez in lista_peces:
-        pez.actualizar()
-    for b in lista_burbujas_deco:
-        b.sety(b.ycor() + b.velocidad_y)
-        if b.ycor() > 340:
-            b.sety(-310)
-            b.setx(random.randint(-400, 400))
-    turtle.update()
-    turtle.ontimer(animar_mar, 60)
+    try:
+        for pez in lista_peces:
+            pez.actualizar()
+        for b in lista_burbujas_deco:
+            b.sety(b.ycor() + b.velocidad_y)
+            if b.ycor() > 340:
+                b.sety(-310)
+                b.setx(random.randint(-400, 400))
+        turtle.update()
+        turtle.ontimer(animar_mar, 60)
+    except turtle.Terminator:
+        pass
 
 
 # ══════════════════════════════════════════════════════════════
