@@ -4,125 +4,168 @@ import time
 import math
 
 ANCHO, ALTO = 900, 650
-RADIO_BURBUJA = 55
-COLOR_AGUA_SUPERIOR = "#0E5B7A"
-COLOR_SELECCION = "#FFD700"
-COLOR_VECINO = "#FFA500"
-COLOR_TEXTO_NUM = "#003366"
-COLOR_BURBUJA_NORMAL = COLOR_AGUA_SUPERIOR
+RADIO_BURBUJA   = 55          # radio visual en píxeles
+SHAPE_SIZE      = 3.67        # RADIO_BURBUJA / 15  (turtle usa unidades de 15px)
 
-numeros = []
-burbujas = []
-seleccionada = None
-pase_actual = 1
-intercambios = 0
+COLOR_NORMAL    = "#2FA8D8"
+COLOR_SELECCION = "#FFD700"
+COLOR_VECINO    = "#FFA500"
+COLOR_TEXTO_NUM = "#001830"
+
+numeros         = []
+burbujas        = []
+seleccionada    = None
+pase_actual     = 1
+intercambios    = 0
 juego_terminado = False
 
-sonido_pop = None
-sonido_error = None
+sonido_pop      = None
+sonido_error    = None
 sonido_victoria = None
 
-info_turtle = None
+info_turtle     = None
 marcador_turtle = None
 
 
-# -------------------- BURBUJAS --------------------
+# ══════════════════════════════════════════════════════════════
+#  BURBUJA: usa shape="circle" → movible sin tocar el fondo
+# ══════════════════════════════════════════════════════════════
 
-def crear_burbuja_juego(x, y, numero, color=COLOR_BURBUJA_NORMAL):
-    t_sombra = turtle.Turtle()
-    t_sombra.hideturtle()
-    t_sombra.penup()
-    t_sombra.goto(x + 3, y - 3)
-    t_sombra.dot(RADIO_BURBUJA * 2, "#001020")
+def crear_burbuja_juego(x, y, numero, color=COLOR_NORMAL):
+    """
+    Cada burbuja tiene 3 capas de tortuga con shape circle:
+      sombra   → círculo oscuro desplazado
+      cuerpo   → círculo de color principal
+      brillo   → círculo blanco pequeño arriba-izquierda
+    Y una tortuga de texto separada (ésta sí usa write).
+    """
+    # --- sombra ---
+    sombra = turtle.Turtle()
+    sombra.hideturtle()
+    sombra.shape("circle")
+    sombra.shapesize(SHAPE_SIZE * 1.05, SHAPE_SIZE * 1.05)
+    sombra.color("#001A2C")
+    sombra.penup()
+    sombra.goto(x + 5, y - 5)
 
-    t_principal = turtle.Turtle()
-    t_principal.hideturtle()
-    t_principal.penup()
-    t_principal.goto(x, y)
-    t_principal.dot(RADIO_BURBUJA * 2, color)
+    # --- cuerpo ---
+    cuerpo = turtle.Turtle()
+    cuerpo.hideturtle()
+    cuerpo.shape("circle")
+    cuerpo.shapesize(SHAPE_SIZE, SHAPE_SIZE)
+    cuerpo.color("#A8DFFF", color)   # (borde, relleno)
+    cuerpo.penup()
+    cuerpo.goto(x, y)
 
-    t_brillo = turtle.Turtle()
-    t_brillo.hideturtle()
-    t_brillo.penup()
-    t_brillo.goto(x - 15, y + 15)
-    t_brillo.dot(12, "white")
+    # --- brillo ---
+    brillo = turtle.Turtle()
+    brillo.hideturtle()
+    brillo.shape("circle")
+    brillo.shapesize(0.75, 0.75)
+    brillo.color("white", "white")
+    brillo.penup()
+    brillo.goto(x - 16, y + 16)
 
-    t_num = turtle.Turtle()
-    t_num.hideturtle()
-    t_num.penup()
-    t_num.goto(x, y - 12)
-    t_num.color(COLOR_TEXTO_NUM)
-    t_num.write(numero, align="center", font=("Arial", 26, "bold"))
+    # --- número (texto) ---
+    texto = turtle.Turtle()
+    texto.hideturtle()
+    texto.penup()
+    texto.color(COLOR_TEXTO_NUM)
+    texto.goto(x, y - 13)
+    texto.write(numero, align="center", font=("Arial", 24, "bold"))
 
-    return {
-        'sombra': t_sombra,
-        'principal': t_principal,
-        'brillo': t_brillo,
-        'texto': t_num,
-        'pos': (x, y),
-        'valor': numero
+    b_dict = {
+        'sombra':  sombra,
+        'cuerpo':  cuerpo,
+        'brillo':  brillo,
+        'texto':   texto,
+        'pos':     (x, y),
+        'valor':   numero,
     }
+    _mover_conjunto(b_dict, x, y)
+    return b_dict
 
 
-def redibujar_burbuja(burbuja, color):
-    x, y = burbuja['pos']
-    valor = burbuja['valor']
-    burbuja['sombra'].clear()
-    burbuja['principal'].clear()
-    burbuja['brillo'].clear()
-    burbuja['texto'].clear()
-    burbuja['sombra'].goto(x + 3, y - 3)
-    burbuja['sombra'].dot(RADIO_BURBUJA * 2, "#001020")
-    burbuja['principal'].goto(x, y)
-    burbuja['principal'].dot(RADIO_BURBUJA * 2, color)
-    burbuja['brillo'].goto(x - 15, y + 15)
-    burbuja['brillo'].dot(12, "white")
-    burbuja['texto'].goto(x, y - 12)
-    burbuja['texto'].write(valor, align="center", font=("Arial", 26, "bold"))
+def _mover_conjunto(b, x, y):
+    """Mueve las 3 tortugas-shape a la nueva posición (sin redibujar fondo)."""
+    b['sombra'].clearstamps()
+    b['sombra'].goto(x + 5, y - 5)
+    b['sombra'].stamp()
+    
+    b['cuerpo'].clearstamps()
+    b['cuerpo'].goto(x, y)
+    b['cuerpo'].stamp()
+    
+    b['brillo'].clearstamps()
+    b['brillo'].goto(x - 16, y + 16)
+    b['brillo'].stamp()
+    
+    # El texto sí hay que borrarlo y reescribirlo
+    b['texto'].clear()
+    b['texto'].goto(x, y - 13)
+    b['texto'].write(b['valor'], align="center", font=("Arial", 24, "bold"))
+    b['pos'] = (x, y)
 
+
+def _set_color_burbuja(b, color):
+    b['cuerpo'].fillcolor(color)
+    x, y = b['pos']
+    _mover_conjunto(b, x, y)
+
+
+def redibujar_burbuja(b, color):
+    _set_color_burbuja(b, color)
+    x, y = b['pos']
+    _mover_conjunto(b, x, y)   # reescribe el texto en el mismo sitio
+
+
+def resaltar_vecinos(indice):
+    for i, b in enumerate(burbujas):
+        if indice is not None and i == indice:
+            _set_color_burbuja(b, COLOR_SELECCION)
+        elif indice is not None and abs(indice - i) == 1:
+            _set_color_burbuja(b, COLOR_VECINO)
+        else:
+            _set_color_burbuja(b, COLOR_NORMAL)
+
+
+# ══════════════════════════════════════════════════════════════
+#  INICIALIZAR TABLERO
+# ══════════════════════════════════════════════════════════════
 
 def crear_burbujas(n=6):
     global numeros, burbujas, info_turtle, marcador_turtle
-    numeros = random.sample(range(1, 100), n)
-    burbujas = []
+    numeros   = random.sample(range(1, 100), n)
+    burbujas  = []
     espaciado = 140
-    inicio_x = -(n // 2) * espaciado + (espaciado // 2) * (n % 2 == 0)
+    inicio_x  = -(n // 2) * espaciado + (espaciado // 2) * (n % 2 == 0)
+
     for i, num in enumerate(numeros):
         x = inicio_x + i * espaciado
-        y = 60
-        b = crear_burbuja_juego(x, y, num)
-        burbujas.append(b)
+        burbujas.append(crear_burbuja_juego(x, 60, num))
 
+    # Panel informativo superior
     panel = turtle.Turtle()
-    panel.hideturtle()
-    panel.penup()
-    panel.goto(-440, 280)
-    panel.pendown()
-    panel.color("#A0C4E8")
-    panel.fillcolor("#A0C4E8")
+    panel.hideturtle(); panel.penup()
+    panel.goto(-440, 280); panel.pendown()
+    panel.color("#7ABEDC"); panel.fillcolor("#0D4F6E")
     panel.begin_fill()
     for _ in range(2):
-        panel.forward(880)
-        panel.right(90)
-        panel.forward(60)
-        panel.right(90)
+        panel.forward(880); panel.right(90)
+        panel.forward(58);  panel.right(90)
     panel.end_fill()
 
     info_turtle = turtle.Turtle()
-    info_turtle.hideturtle()
-    info_turtle.penup()
-    info_turtle.goto(0, -240)
-    info_turtle.color("white")
+    info_turtle.hideturtle(); info_turtle.penup()
+    info_turtle.goto(0, -240); info_turtle.color("white")
     info_turtle.write(
         "🖱 Selecciona una burbuja y luego una vecina para ordenar.",
         align="center", font=("Arial", 14, "bold")
     )
 
     marcador_turtle = turtle.Turtle()
-    marcador_turtle.hideturtle()
-    marcador_turtle.penup()
-    marcador_turtle.goto(0, 310)
-    marcador_turtle.color("white")
+    marcador_turtle.hideturtle(); marcador_turtle.penup()
+    marcador_turtle.goto(0, 309); marcador_turtle.color("white")
     actualizar_marcador()
 
 
@@ -134,25 +177,16 @@ def actualizar_marcador():
     )
     if juego_terminado:
         marcador_turtle.goto(0, 280)
-        marcador_turtle.write("¡LISTA ORDENADA! 🎉", align="center", font=("Arial", 22, "bold"))
+        marcador_turtle.write(
+            "¡LISTA ORDENADA! 🎉", align="center", font=("Arial", 22, "bold")
+        )
 
 
-def resaltar_vecinos(indice):
-    for i, b in enumerate(burbujas):
-        if indice is not None and i == indice:
-            redibujar_burbuja(b, COLOR_SELECCION)
-        elif indice is not None and abs(indice - i) == 1:
-            redibujar_burbuja(b, COLOR_VECINO)
-        else:
-            redibujar_burbuja(b, COLOR_BURBUJA_NORMAL)
-
-
-def mover_burbuja(burbuja, x, y):
-    burbuja['sombra'].goto(x + 3, y - 3)
-    burbuja['principal'].goto(x, y)
-    burbuja['brillo'].goto(x - 15, y + 15)
-    burbuja['texto'].goto(x, y - 12)
-
+# ══════════════════════════════════════════════════════════════
+#  ANIMACIÓN DE INTERCAMBIO
+#  Las tortugas-shape se mueven con .goto() → sin parpadeo,
+#  sin tocar el fondo. Solo el texto usa .clear() + write.
+# ══════════════════════════════════════════════════════════════
 
 def intercambiar_burbujas(i, j):
     global numeros, intercambios
@@ -161,49 +195,49 @@ def intercambiar_burbujas(i, j):
     x1, y1 = b1['pos']
     x2, y2 = b2['pos']
 
-    PASOS = 32
-    ALTURA_ARCO = 100  # píxeles hacia arriba en el pico del arco
+    PASOS = 45
+    ARCO  = 105   # altura máxima del arco en píxeles
+
+    _set_color_burbuja(b1, COLOR_SELECCION)   # dorado: pasa por arriba
+    _set_color_burbuja(b2, COLOR_VECINO)       # naranja: pasa por abajo
 
     for paso in range(PASOS + 1):
-        progreso = paso / PASOS
+        p    = paso / PASOS
+        t    = p * p * (3.0 - 2.0 * p)        # smoothstep
+        elev = math.sin(p * math.pi)           # arco simétrico
 
-        # Smoothstep: suaviza inicio y fin del movimiento
-        t = progreso * progreso * (3.0 - 2.0 * progreso)
-
-        # Arco parabólico usando seno
-        arc = math.sin(progreso * math.pi) * ALTURA_ARCO
-
-        # b1 (izquierda) sube alto y cruza hacia x2
         nx1 = x1 + t * (x2 - x1)
-        ny1 = y1 + arc          # sube
+        ny1 = y1 + elev * ARCO                 # sube alto
 
-        # b2 (derecha) sube un poco menos y cruza hacia x1
         nx2 = x2 + t * (x1 - x2)
-        ny2 = y2 + arc * 0.55   # cruza por debajo para no chocar
+        ny2 = y2 + elev * ARCO * 0.40          # sube menos → cruza por debajo
 
-        mover_burbuja(b1, nx1, ny1)
-        mover_burbuja(b2, nx2, ny2)
-        time.sleep(0.012)
+        _mover_conjunto(b1, nx1, ny1)
+        _mover_conjunto(b2, nx2, ny2)
         turtle.update()
+        time.sleep(0.011)
 
-    # Asegurar posiciones finales exactas
-    mover_burbuja(b1, x2, y2)
-    mover_burbuja(b2, x1, y1)
-
+    # Posiciones finales exactas
+    _mover_conjunto(b1, x2, y2)
+    _mover_conjunto(b2, x1, y1)
     b1['pos'] = (x2, y2)
     b2['pos'] = (x1, y1)
 
-    numeros[i], numeros[j] = numeros[j], numeros[i]
+    numeros[i],  numeros[j]  = numeros[j],  numeros[i]
     burbujas[i], burbujas[j] = b2, b1
 
     for b in burbujas:
-        redibujar_burbuja(b, COLOR_BURBUJA_NORMAL)
+        _set_color_burbuja(b, COLOR_NORMAL)
 
     intercambios += 1
     actualizar_marcador()
     if sonido_pop:
         sonido_pop.play()
 
+
+# ══════════════════════════════════════════════════════════════
+#  LÓGICA DE JUEGO
+# ══════════════════════════════════════════════════════════════
 
 def verificar_ordenado():
     return all(numeros[k] <= numeros[k + 1] for k in range(len(numeros) - 1))
@@ -231,15 +265,14 @@ def manejar_click(x, y):
 
     for i, b in enumerate(burbujas):
         bx, by = b['pos']
-        if (bx - RADIO_BURBUJA <= x <= bx + RADIO_BURBUJA and
-                by - RADIO_BURBUJA <= y <= by + RADIO_BURBUJA):
+        if math.hypot(x - bx, y - by) <= RADIO_BURBUJA:
 
             if seleccionada is None:
                 seleccionada = i
                 resaltar_vecinos(i)
                 info_turtle.clear()
                 info_turtle.write(
-                    "👉 Ahora haz clic en una burbuja naranja (vecina) para intercambiar.",
+                    "👉 Haz clic en una burbuja naranja (vecina) para intercambiar.",
                     align="center", font=("Arial", 14, "bold")
                 )
 
@@ -249,16 +282,16 @@ def manejar_click(x, y):
                     seleccionada = None
                     info_turtle.clear()
                     info_turtle.write(
-                        "🖱 Selecciona una burbuja y luego una vecina para intercambiarlas.",
+                        "🖱 Selecciona una burbuja y luego una vecina.",
                         align="center", font=("Arial", 14, "bold")
                     )
 
                 elif abs(seleccionada - i) == 1:
-                    izquierda = min(seleccionada, i)
-                    derecha = max(seleccionada, i)
+                    izq = min(seleccionada, i)
+                    der = max(seleccionada, i)
 
-                    if numeros[izquierda] > numeros[derecha]:
-                        intercambiar_burbujas(izquierda, derecha)
+                    if numeros[izq] > numeros[der]:
+                        intercambiar_burbujas(izq, der)
                         seleccionada = None
                         if verificar_ordenado():
                             finalizar_juego()
@@ -271,16 +304,18 @@ def manejar_click(x, y):
                     else:
                         if sonido_error:
                             sonido_error.play()
-                        t_obj = burbujas[seleccionada]['principal']
-                        for _ in range(3):
-                            t_obj.setx(t_obj.xcor() + 5)
-                            time.sleep(0.03)
-                            t_obj.setx(t_obj.xcor() - 5)
-                            time.sleep(0.03)
-                            turtle.update()
+                        # Vibración de error sin borrar fondo
+                        bx0, by0 = burbujas[seleccionada]['pos']
+                        for _ in range(4):
+                            _mover_conjunto(burbujas[seleccionada], bx0 + 7, by0)
+                            turtle.update(); time.sleep(0.03)
+                            _mover_conjunto(burbujas[seleccionada], bx0 - 7, by0)
+                            turtle.update(); time.sleep(0.03)
+                        _mover_conjunto(burbujas[seleccionada], bx0, by0)
+                        turtle.update()
                         info_turtle.clear()
                         info_turtle.write(
-                            "❌ No hace falta intercambiar: ya están ordenadas.",
+                            "❌ Ya están ordenadas, no hace falta intercambiar.",
                             align="center", font=("Arial", 14, "bold")
                         )
                         resaltar_vecinos(None)
@@ -298,25 +333,24 @@ def manejar_click(x, y):
                     seleccionada = None
 
             turtle.update()
-            break
+            return
 
-    else:
-        if seleccionada is not None:
-            resaltar_vecinos(None)
-            seleccionada = None
-            info_turtle.clear()
-            info_turtle.write(
-                "🖱 Selecciona una burbuja y luego una vecina para intercambiarlas.",
-                align="center", font=("Arial", 14, "bold")
-            )
-            turtle.update()
+    # Clic en zona vacía
+    if seleccionada is not None:
+        resaltar_vecinos(None)
+        seleccionada = None
+        info_turtle.clear()
+        info_turtle.write(
+            "🖱 Selecciona una burbuja y luego una vecina.",
+            align="center", font=("Arial", 14, "bold")
+        )
+        turtle.update()
 
 
 def inicializar_juego(pop_snd, error_snd, victoria_snd):
     global sonido_pop, sonido_error, sonido_victoria
-    sonido_pop = pop_snd
-    sonido_error = error_snd
+    sonido_pop      = pop_snd
+    sonido_error    = error_snd
     sonido_victoria = victoria_snd
-
     crear_burbujas()
     turtle.onscreenclick(manejar_click)
